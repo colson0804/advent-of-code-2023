@@ -1,143 +1,120 @@
 ﻿namespace advent_of_code_2023;
 using System;
 using System.IO;
+using System.Text.RegularExpressions;
 
 class Program
 {
     static void Main(string[] args)
     {
-        Day1.Part1();
-        Day1.Part2();
+        Day2.Run2();
     }
 }
 
-class Day1
+
+class Day2
 {
-    private static string ExtractTwoDigitNumber(string line)
+    public static void Run1()
     {
-        string twoDigitNumber = "";
-        int i = 0;
-        for (i = 0; i < line.Length; i++)
-        {
-            if (int.TryParse(line[i].ToString(), out int resultTryParse))
-            {
-                twoDigitNumber += line[i];
-                break;
-            }
-        }
+        List<string> input = TextParser.ReadLines("./resources/day-2.txt");
 
-        for (int j = line.Length - 1; j >= 0; j--)
-        {
-            if (int.TryParse(line[j].ToString(), out int resultTryParse))
-            {
-                twoDigitNumber += line[j];
-                break;
-            }
-        }
-
-        return twoDigitNumber;
-    }
-    
-    public static void Part1()
-    {
-        List<string> input = TextParser.ReadLines("./resources/day-1.txt");
-        int sum = 0;
+        int result = 0;
+        int index = 1;
         foreach (string line in input)
         {
-            string twoDigitNumber = ExtractTwoDigitNumber(line);
-            if (int.TryParse(twoDigitNumber, out int value))
+            if (isGameValid(line))
             {
-                sum += value;
+                result += index;
             }
+
+            index += 1;
         }
 
-        Console.WriteLine(sum);
+        Console.WriteLine("Result: " + result);
     }
 
-    public static void Part2() 
+    private static bool isGameValid(string line)
     {
-        Dictionary<string, int> words = new Dictionary<string, int>()
+        Dictionary<string, int> colors = new Dictionary<string, int>
         {
-            ["one"] = 1,
-            ["two"] = 2,
-            ["three"] = 3,
-            ["four"] = 4,
-            ["five"] = 5,
-            ["six"] = 6,
-            ["seven"] = 7,
-            ["eight"] = 8,
-            ["nine"] = 9
+            { "red", 12 },
+            { "green", 13 },
+            { "blue", 14 }
         };
 
-        List<string> input = TextParser.ReadLines("./resources/day-1.txt");
-        int sum = 0;
-        foreach (string line in input)
+        string game = line.Split(": ")[1];
+        string[] draws = game.Split("; ");
+
+        foreach (string draw in draws)
         {
-            string twoDigitNumber = "";
-
-            int i = 0;
-            for (i = 0; i < line.Length; i++)
+            string[] cubes = draw.Split(", ");
+            foreach (string cube in cubes)
             {
-                if (int.TryParse(line[i].ToString(), out int resultTryParse))
-                {
-                    twoDigitNumber += line[i];
-                    break;
-                }
-                else
-                {
-                    string substring = line.Substring(i);
-                    bool isInDict = false;
-                    foreach (var kvp in words)
-                    {
-                        if (substring.StartsWith(kvp.Key))
-                        {
-                            twoDigitNumber += kvp.Value.ToString();
-                            isInDict = true;
-                            break;
-                        }
-                    }
+                string[] splitCube = cube.Split(" ");
+                string color = splitCube[1];
+                int value = Int32.Parse(splitCube[0]);
 
-                    if (isInDict) 
+                if (colors.TryGetValue(color, out int result))
+                {
+                    if (value > result)
                     {
-                        break;
+                        return false;
                     }
                 }
-            }
-
-            for (int j = line.Length - 1; j >= 0; j--)
-            {
-                if (int.TryParse(line[j].ToString(), out int resultTryParse))
+                else 
                 {
-                    twoDigitNumber += line[j];
-                    break;
+                    Console.WriteLine("Value not in dictionary");
                 }
-                else
-                {
-                    string substring = line.Substring(j);
-                    bool isInDict = false;
-                    foreach (var kvp in words)
-                    {
-                        if (substring.StartsWith(kvp.Key))
-                        {
-                            twoDigitNumber += kvp.Value.ToString();
-                            isInDict = true;
-                            break;
-                        }
-                    }
-
-                    if (isInDict) 
-                    {
-                        break;
-                    }
-                }
-            }
-
-            if (int.TryParse(twoDigitNumber, out int value))
-            {
-                sum += value;
             }
         }
 
-        Console.WriteLine(sum);
+        return true;
+    }
+
+    public static void Run2()
+    {
+        List<string> input = TextParser.ReadLines("./resources/day-2.txt");
+        int result = 0;
+        foreach (string line in input)
+        {
+            result += Power(line);
+        }
+
+        Console.WriteLine("Result: " + result);
+    }
+
+    private static int Power(string line)
+    {
+        Dictionary<string, int> minDictionary = new Dictionary<string, int>
+        {
+            { "red", 0 },
+            { "green", 0 },
+            { "blue", 0 }
+        };
+
+        string game = line.Split(": ")[1];
+        string[] draws = game.Split("; ");
+
+        foreach (string draw in draws)
+        {
+            string[] cubes = draw.Split(", ");
+            foreach (string cube in cubes)
+            {
+                string[] splitCube = cube.Split(" ");
+                string color = splitCube[1];
+                int value = Int32.Parse(splitCube[0]);
+
+                if (minDictionary.TryGetValue(color, out int result))
+                {
+                    minDictionary[color] = Math.Max(value, result);
+                }
+                else 
+                {
+                    Console.WriteLine("Value not in dictionary");
+                }
+            }
+        }
+
+        return minDictionary.Values.Aggregate(1, (acc, value) => acc * value);
     }
 }
