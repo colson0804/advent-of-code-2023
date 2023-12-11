@@ -7,114 +7,171 @@ class Program
 {
     static void Main(string[] args)
     {
-        Day2.Run2();
+        Day3.Run2();
     }
 }
 
-
-class Day2
+class Day3
 {
     public static void Run1()
     {
-        List<string> input = TextParser.ReadLines("./resources/day-2.txt");
-
+        List<string> input = TextParser.ReadLines("./resources/day-3.txt");
         int result = 0;
-        int index = 1;
-        foreach (string line in input)
+        
+        int numRows = input.Count();
+        int numCols = input[0].Count();
+
+        int i = 0;
+        int j = 0;
+
+        while (i < numRows)
         {
-            if (isGameValid(line))
+            while (j < numCols)
             {
-                result += index;
-            }
-
-            index += 1;
-        }
-
-        Console.WriteLine("Result: " + result);
-    }
-
-    private static bool isGameValid(string line)
-    {
-        Dictionary<string, int> colors = new Dictionary<string, int>
-        {
-            { "red", 12 },
-            { "green", 13 },
-            { "blue", 14 }
-        };
-
-        string game = line.Split(": ")[1];
-        string[] draws = game.Split("; ");
-
-        foreach (string draw in draws)
-        {
-            string[] cubes = draw.Split(", ");
-            foreach (string cube in cubes)
-            {
-                string[] splitCube = cube.Split(" ");
-                string color = splitCube[1];
-                int value = Int32.Parse(splitCube[0]);
-
-                if (colors.TryGetValue(color, out int result))
+                string digitString = "";
+                bool isAdjacentToSymbol = false;
+                while (j <numCols && char.IsDigit(input[i][j]))
                 {
-                    if (value > result)
+                    digitString += input[i][j];
+                    isAdjacentToSymbol |= IsAdjacentToSymbol(input, i, j);
+                    j += 1;
+                }
+
+                if (digitString.Count() > 0 && int.TryParse(digitString, out int digit))
+                {
+                    if (isAdjacentToSymbol)
                     {
-                        return false;
+                        result += digit;
                     }
                 }
-                else 
-                {
-                    Console.WriteLine("Value not in dictionary");
-                }
+
+                j += 1;
             }
+
+            i += 1;
+            j = 0;
         }
 
-        return true;
+        Console.WriteLine(result);
     }
 
     public static void Run2()
     {
-        List<string> input = TextParser.ReadLines("./resources/day-2.txt");
+        List<string> input = TextParser.ReadLines("./resources/day-3.txt");
         int result = 0;
-        foreach (string line in input)
+        
+        int numRows = input.Count();
+        int numCols = input[0].Count();
+
+        for (int i = 0; i < numRows; i++)
         {
-            result += Power(line);
+            for (int j = 0; j < numCols; j++)
+            {
+                char character = input[i][j];
+                if (IsSymbol(character))
+                {
+                    result += GearRatio(input, i, j);
+                }
+            }
         }
 
         Console.WriteLine("Result: " + result);
     }
 
-    private static int Power(string line)
+    private static int GearRatio(List<string> input, int row, int col)
     {
-        Dictionary<string, int> minDictionary = new Dictionary<string, int>
-        {
-            { "red", 0 },
-            { "green", 0 },
-            { "blue", 0 }
-        };
+        int numRows = input.Count();
+        int numCols = input[0].Count();
+       
+        int i = row - 1;
+        int j = col - 1;
 
-        string game = line.Split(": ")[1];
-        string[] draws = game.Split("; ");
+        int ratio = 1;
+        int numberOfAdjacentIntegers = 0;
 
-        foreach (string draw in draws)
+        while (i < numRows && i <= row + 1)
         {
-            string[] cubes = draw.Split(", ");
-            foreach (string cube in cubes)
+            j = col - 1;
+            while (j < numCols && j <= col + 1)
             {
-                string[] splitCube = cube.Split(" ");
-                string color = splitCube[1];
-                int value = Int32.Parse(splitCube[0]);
-
-                if (minDictionary.TryGetValue(color, out int result))
+                char character = input[i][j];
+                if (char.IsDigit(character))
                 {
-                    minDictionary[color] = Math.Max(value, result);
+                    // Get full number 
+                    if (TryGetInteger(input, i, j, out int value, out j))
+                    {
+                        // Console.WriteLine("Here: " + value);
+                        ratio *= value;
+                        numberOfAdjacentIntegers += 1;
+                        if (numberOfAdjacentIntegers == 2) 
+                        {
+                            return ratio;
+                        }
+                    }
                 }
-                else 
+
+                j++;
+            }
+            i++;
+        }
+
+        return 0;
+    }
+
+    private static bool TryGetInteger(List<string> input, int row, int col, out int result, out int endIndex)
+    {   
+        string digitString = "";
+        int numCols = input[row].Count();
+
+        // Get start 
+        int i = col;
+        while (i > 0 && char.IsDigit(input[row][i - 1]))
+        {
+            i--; 
+        }
+
+        while (i < numCols && char.IsDigit(input[row][i]))
+        {
+            digitString += input[row][i];
+            i++;
+        }
+
+        
+        if (int.TryParse(digitString, out result))
+        {
+            endIndex = i;
+            return true;
+        }
+        else {
+            endIndex = col;
+            return false;
+        }
+    }
+
+    private static bool IsSymbol(char character)
+    {
+        return !char.IsDigit(character) && character != '.';
+    }
+
+    private static bool IsAdjacentToSymbol(List<string> input, int row, int col)
+    {
+        int numRows = input.Count();
+        int numCols = input[0].Count();
+
+        for (int i = row - 1; i <= row + 1; i++)
+        {
+            for (int j = col - 1; j <= col + 1; j++)
+            {
+                if (i >= 0 && i < numRows && j >= 0 && j < numCols)
                 {
-                    Console.WriteLine("Value not in dictionary");
+                    if (IsSymbol(input[i][j]))
+                    {
+                        return true;
+                    }
                 }
             }
         }
 
-        return minDictionary.Values.Aggregate(1, (acc, value) => acc * value);
+        return false;
     }
 }
